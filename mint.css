@@ -29,7 +29,6 @@ body{
 	outline:0;
 }
 
-
 ul.trans_box{
 	list-style-type: none;
 	width:100%;
@@ -38,10 +37,6 @@ ul.trans_box{
 	padding:15px 5px 8px 20px;
 	margin: 0px 20px;
 	
-}
-
-.trans_box li{
-	padding: 0px 0px;
 }
 
 .trans_box li a{
@@ -68,10 +63,16 @@ ul.trans_box{
 	color:black;
 }
 
+main {
+	display: grid;
+	grid-template-columns: 1fr 12fr 1fr;
+}
+
 .content{
-	margin:20px 100px 20px 100px;
+	margin:20px 0px 20px 0px;
 	padding:10px;
 	background-color: rgba(256,256,256,0.5);
+	grid-column-start: 2;
 }
 /*.peachy{
 	color:green;
@@ -89,27 +90,3 @@ ul.trans_box{
 }*/
 
 /*		unused
-
-
-.horiz_buttons{
-	list-style-type: none;
-	display: inline-flex;
-
-}
-
-
-.horiz_buttons li a{
-	margin: 0px 10px 0px 0px;
-	padding:10px;
-	border-radius: 10px;
-	border:1px solid black;
- 	box-shadow: inset 2px 2px 3px rgba(120,255,120,0.6),inset -2px -2px 3px rgba(0,0,0,0.6),3px 3px 5px black;
-}
-
-.horiz_buttons li a:hover {
-	color:black;
-}
-
-
-
-*/

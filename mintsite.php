@@ -3,6 +3,7 @@
 <head>
 	<title>Mint_Enigma</title>
 	<link href="mint.css" rel="stylesheet" type="text/css" />
+	<link rel="icon" href="Logo000.png"/>
 </head>
 <body>
 	<div class="header">

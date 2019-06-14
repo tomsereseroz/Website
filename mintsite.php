@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title>Mint_Enigma</title>
+	<title>Mint_Robot</title>
 	<link href="mint.css" rel="stylesheet" type="text/css" />
 	<link rel="icon" href="Logo000.png"/>
 </head>
 <body>
 	<div class="header">
-		<H1><a href="#">Mint_Enigma</a></H1>
+		<H1><a href="#">Mint_Robot</a></H1>
 		<ul class="trans_box">
 			<li><a href="#">blog</a></li>
 			<li><a href="#">podcast</a></li>

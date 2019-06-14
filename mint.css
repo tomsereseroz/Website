@@ -73,6 +73,11 @@ main {
 	padding:10px;
 	background-color: rgba(256,256,256,0.5);
 	grid-column-start: 2;
+	grid-column-end: 3;
+}
+
+pre{
+	font-family: arial;
 }
 /*.peachy{
 	color:green;

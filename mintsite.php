@@ -22,7 +22,7 @@
 			akrjgha afjkfashdfoewaa fa soidfj osafj oasjdfoasd foas ifsoa dfioa sifoadsfj oasjfosaijfio jaojifoaijfoja fj f jafo ajfo aof  oji fo jsofj oafj aofj aoif oajf oa jfoija ofji aoifj oajif oijaf oaifj oaj ifoij aoj foj aiif ioajf  oijafj ofaj oajfoija fio afioj aoifj oaijfiaoi foaj foj iafojaoifjafji a ofjaoif joiajoi f joaf joaj fojaoijfja f oajfo foijiafofaoia
 		</p>
 		<br>
-		<p><?php include('text/overview.txt'); ?></p>
+		<p><pre><?php include('text/overview.txt'); ?></pre></p>
 	</div>
 </main>
 </body>

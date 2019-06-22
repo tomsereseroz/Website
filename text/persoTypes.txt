@@ -7,6 +7,6 @@ variable / constant
 open / reserved (opinions)
 Active / passive
 adventerous / familiar
-
+masculine / feminine
 
 maybe extrovert/introvert

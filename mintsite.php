@@ -8,7 +8,7 @@
 <body>
 	<!-- Top navigation bar -->
 	<div class="header">
-		<H1><a href="#">Mint_Robot</a></H1>
+		<h1><a href="#">Mint_Robot</a></h1>
 		<ul class="trans_box">
 			<li><a href="#">blog</a></li>
 			<li><a href="#">podcast</a></li>
@@ -22,7 +22,8 @@
 	<div style="height: 100px;"></div>
 <main>
 	<div class="content">
-		<pre><?php include('text/overview.txt'); ?></pre>
+		<pre><?php echo"<div>"; include('text/overview.txt'); echo "</div><div><h1>Hello World</h1>blahblahblah</div>"; ?>
+		</pre>
 	</div>
 </main>
 </body>

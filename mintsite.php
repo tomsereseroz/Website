@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title>Mint_Robot</title>
+	<title>Mint Observatory</title>
 	<link href="mint.css" rel="stylesheet" type="text/css" />
 	<link rel="icon" href="Logo000.png"/>
 </head>

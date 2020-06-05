@@ -1,0 +1,6 @@
+My goal for now is to make a fresh, responsive website page which uses very little bandwidth to run.
+
+joe rogan 7:55
+width="1691" height="649"
+<iframe width="500" height="250" src="https://www.youtube.com/embed/TvHqvYesr9M?t=475" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+https://youtu.be/TvHqvYesr9M?t=481

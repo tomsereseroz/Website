@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport">
+    <meta http-equiv="X-UA-Compatible" content="ie-edge">
+    <title>Carouselllllll</title>
+    <link rel="stylesheet" href="carousel.css">
+</head>
+<body>
+<div class="carousel">    
+    <div class="carousel_track_container">
+        <ul class="carousel_track">
+            <li class="carousel_slide current-slide"><img class="carousel_img" src="img/kastra.jpg"></li>
+            <li class="carousel_slide"><img class="carousel_img" src="img/piggy.jpg"></li>
+            <li class="carousel_slide"><img class="carousel_img" src="img/Titans.jpg"></li>
+        </ul>
+    </div>
+    <button class="carousel_button carousel_button--left" onclick="this.blur();">&#8249;</button>
+    <button class="carousel_button carousel_button--right" onclick="this.blur();">&#8250;</button>
+    <div class="carousel_nav">
+        <button class="carousel_indicator current-slide" onclick="this.blur();"></button>
+        <button class="carousel_indicator" onclick="this.blur();"></button>
+        <button class="carousel_indicator" onclick="this.blur();"></button>
+    </div>
+</div>
+<script src="carousel.js"></script>
+</body>
+</html>

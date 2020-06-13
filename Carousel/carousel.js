@@ -6,7 +6,7 @@ const nav = document.querySelector('.carousel_nav');
 const dots = Array.from(nav.children);
 
 var firstrun=1;
-var stopplayback;
+var autoscroll;
 var transition = 1;
 
 var slidewidth = slides[0].getBoundingClientRect().width;
@@ -31,7 +31,7 @@ const movetoslide = (targetindex) => {
     slides[targetindex].classList.add('current-slide'); 
     dots[currentindex].classList.remove('current-slide');
     dots[targetindex].classList.add('current-slide');
-    clearTimeout(stopplayback);
+    clearTimeout(autoscroll);
     transition = 1;
 }
 
@@ -60,14 +60,14 @@ nav.addEventListener('click', e =>{
 function carousel(){
     if(!firstrun) movenext();
     firstrun=0;
-    stopplayback = setTimeout(carousel, 4000);
+    autoscroll = setTimeout(carousel, 4000);
 }
 
-var resize;
+var resizeTimeout;
 
 window.addEventListener('resize', e =>{
-    clearTimeout(resize);
-    resize = setTimeout(reconfigure, 100);
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(reconfigure, 100);
 });
 
 function reconfigure(){

@@ -13,9 +13,9 @@
 		<ul class="trans_box">
 			<li><a href="#">blog</a></li>
 			<li><a href="#">podcast</a></li>
-			<li><a href="#">products</a></li>
+			<li><a href="game/game.php">game</a></li>
 			<li><a href="#">music</a></li>
-			<li><a href="#">gallery</a></li>
+			<li><a href="webglfun/main.php">gallery</a></li>
 			<li><a href="favsites.html">about</a></li>
 		</ul>
 	</div>

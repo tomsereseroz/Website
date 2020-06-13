@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Minty Robot</title>
+	<link href="../mint.css" rel="stylesheet" type="text/css" />
+	<link rel="stylesheet" href="game.css">
+	<link rel="icon" href="../Logo000.png"/>
+</head>
+<body>
+	<!-- Top navigation bar -->
+	<div class="header">
+		<a href="../mintsite.php"><h1>Minty Robot</h1></a>
+		<ul class="trans_box">
+			<li><a href="#">blog</a></li>
+			<li><a href="#">podcast</a></li>
+			<li><a href="#">products</a></li>
+			<li><a href="#">music</a></li>
+			<li><a href="../webglfun/main.php">gallery</a></li>
+			<li><a href="../favsites.html">about</a></li>
+		</ul>
+	</div>
+	<!-- empty box so content doesn't go under header -->
+	<div style="height: 120px;"></div>
+<main>
+	<canvas class="gamebox" id="gb"></canvas>
+	<script src="game.js"></script>
+</main>
+</body>

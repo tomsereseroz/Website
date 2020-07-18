@@ -16,7 +16,7 @@
 			<li><a href="game/game.php">game</a></li>
 			<li><a href="#">music</a></li>
 			<li><a href="webglfun/main.php">gallery</a></li>
-			<li><a href="favsites.html">about</a></li>
+			<li><a href="about.html">about</a></li>
 		</ul>
 	</div>
 	<!-- empty box so content doesn't go under header -->

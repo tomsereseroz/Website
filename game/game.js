@@ -205,10 +205,10 @@ class Entity extends physObj{//entities are for things that aim in a certaian di
     }
     super.Draw();
   }
-  Move(){
+  Move(){//sets velocity
     if(this.type == 9999){//player case
       
-    }else if(this.type == 0){
+    }else if(this.type == 0){//enemy case
       moveAtPlayer(this,player);
     }
   }
@@ -244,21 +244,20 @@ class projectileArray extends objectArray{
     for (var i = 0; i < this.array.length; i++){
       deleted = false;
       if(this.array[i].checkTimeout()||this.array[i].isOffScreen()){
-        this.array.splice(i,1);
-        i--;
         deleted = true;
       }else{
         for(var j = 0; j < entArray.array.length; j++){
           if(this.array[i].checkCollision(entArray.array[j])){
             entArray.array[j].damage(this.array[i]).conserveMomentum(this.array[i]);
-            this.array.splice(i,1);
-            i--;
             deleted = true;
             break;
           }
         }
-      if(!deleted) this.array[i].Tick();
       }
+      if(deleted){
+        this.array.splice(i,1);
+        i--;
+      }else this.array[i].Tick();
     }
   }
   Draw(){
@@ -345,7 +344,7 @@ function loop(){
     axes = gamepads[0].axes;
     buttons = gamepads[0].buttons;
     //buttons.forEach(drawButton);
-    if(Math.abs(axes[0]) > 0.04 ){player.vel[0] += axes[0];}//controller deadzone
+    if(Math.abs(axes[0]) > 0.04 ){player.vel[0] += axes[0];}//controller deadzone = +-0.04
     if(Math.abs(axes[1]) > 0.04 ){player.vel[1] += axes[1];}
     if(Math.abs(axes[2]) > 0.04 ){player.aim[0] = axes[2];}else{player.aim[0] = 0;}
     if(Math.abs(axes[3]) > 0.04 ){player.aim[1] = axes[3];}else{player.aim[1] = 0;}
@@ -361,7 +360,7 @@ function loop(){
     projArray.Tick();
     entArray.Tick();
     if(entArray.array.length < 3){
-      entArray.add(new Entity).setType(0).setProperties([70]).setMass(3).setHP(100).setShape(shapes.Circle).setPosition([Math.random()*width,Math.random()*height]);
+      entArray.add(new Entity).setType(0).setProperties([70]).setMass(1).setHP(100).setShape(shapes.Circle).setPosition([Math.random()*width,Math.random()*height]);
     }
   }else{
     createPlayerGradient(player);

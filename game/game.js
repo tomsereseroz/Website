@@ -18,8 +18,60 @@ function gamepadHandler(event, connecting) {
 
 window.addEventListener("gamepadconnected", function(e) { gamepadHandler(e, true); }, false);
 window.addEventListener("gamepaddisconnected", function(e) { gamepadHandler(e, false); }, false);
+document.onkeydown = keyDownHandler;
+document.onkeyup = keyUpHandler;
+document.onmousemove = function(e){
+mouseX = e.clientX - canvasRect.x;
+mouseY = e.clientY - canvasRect.y;
+//console.log("altered: ", mouseX, mouseY);
+};
+document.onmousedown = function(e) { mousedown = 1; };
+document.onmouseup =   function(e) { mousedown = 0; };
 
-let context = document.getElementById("gb").getContext("2d");
+function keyDownHandler(event){
+  //console.log(event.keyCode);
+  if(event.keyCode >= 37 && event.keyCode <= 40){
+    keysdown[event.keyCode-37] = 1;
+  }else
+    switch(event.keyCode){
+      case 65:
+        keysdown[0] = 1;
+        break;
+      case 87:
+        keysdown[1] = 1;
+        break;
+      case 68:
+        keysdown[2] = 1;
+        break;
+      case 83:
+        keysdown[3] = 1;
+        break;
+      default:
+        break;
+    }
+}
+
+function keyUpHandler(event){
+  if(event.keyCode >= 37 && event.keyCode <= 40){
+    keysdown[event.keyCode-37] = 0;
+  }else
+    switch(event.keyCode){
+      case 65:
+        keysdown[0] = 0;
+        break;
+      case 87:
+        keysdown[1] = 0;
+        break;
+      case 68:
+        keysdown[2] = 0;
+        break;
+      case 83:
+        keysdown[3] = 0;
+        break;
+      default:
+        break;
+    }
+}
 
 function createPlayerGradient(player){
   playergrd = context.createRadialGradient(player.pos[0], player.pos[1], 5, player.pos[0], player.pos[1],40);
@@ -27,6 +79,14 @@ function createPlayerGradient(player){
   playergrd.addColorStop(.4+.3*Math.sin(2*time*Math.PI/2000), "black");
   playergrd.addColorStop(.8+.1*Math.sin(2*time*Math.PI/3000), "red");
   playergrd.addColorStop(.95+.05*Math.sin(2*time*Math.PI/600), "pink");
+}
+
+function aimAtMouse(){
+  let dist = distance(player.pos,[mouseX,mouseY]);
+  let factor = toRadius(dist);
+  factor = Math.min(factor/500, 1);
+  dist = Unify(dist);
+  player.aim = dist.map(x => x*factor);
 }
 
 function Unify([x,y]){
@@ -191,18 +251,20 @@ class Entity extends physObj{//entities are for things that aim in a certaian di
   damage(source){this.health-=source.damage; return this;}
   checkHP(){return this.health < 1;}
   Draw(){
-    if(this.type == 9999){//player case, draw extra marker for aim
+    if(this.type == 9999){//player case, draw extra marker for aim 
+      createPlayerGradient(this);
+      this.setStyle(playergrd);
+      super.Draw();
       context.beginPath();
       context.strokeStyle = "pink";
       context.moveTo(this.pos[0],this.pos[1]);
       context.lineWidth = 10;
       context.lineTo(this.pos[0]+this.aim[0]*40,this.pos[1]+this.aim[1]*40);
       context.stroke();
-      createPlayerGradient(this);
-      this.setStyle(playergrd);
     }else if(this.type == 0){
       this.setStyle(getHPStyle(this));
-    }
+      super.Draw();
+    }else
     super.Draw();
   }
   Move(){//sets velocity
@@ -311,22 +373,13 @@ function checkButton(button,index){
     }
   }
 }
-//start of runtime code
-let height = document.documentElement.clientHeight - 200;
-let width = document.documentElement.clientWidth - 20;
-let grd = context.createLinearGradient(0, 0, width, 0);
-  grd.addColorStop(0, "#afe569");
-  grd.addColorStop(.8, "#207cca");
-  grd.addColorStop(1, "#3b5b83");
-let playergrd = context.createRadialGradient(width/2, height/2,5,width/2, height/2,40);
 
-let d = new Date;
-let time = d.getTime();
-let axes = [];
-let buttons = {};
-let projArray = new projectileArray;
-let entArray = new entityArray;
-let player = entArray.add(new Entity).setPosition([3*width/4,3*height/4]).setShape(shapes.Circle).setType(9999).setMass(1000).setFriction(.05).setProperties([40]).setAim([0,0]).setHP(100);
+function limitDeadzone(axes,cutoff){
+  axes.forEach(number => {
+    if(Math.abs(number) < cutoff )
+      number = 0;
+  });
+}
 
 function loop(){
   d = new Date;
@@ -365,11 +418,51 @@ function loop(){
   }else{
     createPlayerGradient(player);
     player.setStyle(playergrd);
-    player.Draw();
+    entArray.Draw();
+    projArray.Draw();
+    projArray.Tick();   
+    entArray.Tick();
+    
+    //move
+    if(keysdown != [0,0,0,0]){
+      player.vel[0] += keysdown[2] - keysdown[0];
+      player.vel[1] += keysdown[3] - keysdown[1];
+    }
+    //aim
+    aimAtMouse();
+    if(mousedown)
+      Shoot(player);
+    //console.log("running");
+    if(entArray.array.length < 3){
+      entArray.add(new Entity).setType(0).setProperties([70]).setMass(1).setHP(100).setShape(shapes.Circle).setPosition([Math.random()*width,Math.random()*height]);
+    }
 }
-  
   window.requestAnimationFrame(loop);
-  //console.log(numpads[0]);
 }
+
+//start of runtime code
+
+let context = document.getElementById("gb").getContext("2d");
+let height = document.documentElement.clientHeight - 200;
+let width = document.documentElement.clientWidth - 20;
+let grd = context.createLinearGradient(0, 0, width, 0);
+  grd.addColorStop(0, "#afe569");
+  grd.addColorStop(.8, "#207cca");
+  grd.addColorStop(1, "#3b5b83");
+let playergrd = context.createRadialGradient(width/2, height/2,5,width/2, height/2,40);
+let canvasRect = document.getElementById("gb").getBoundingClientRect();
+let mouseX = 0;
+let mouseY = 0;
+
+let keysdown = [0,0,0,0];
+let mousedown = 0;
+
+let d = new Date;
+let time = d.getTime();
+let axes = [];
+let buttons = {};
+let projArray = new projectileArray;
+let entArray = new entityArray;
+let player = entArray.add(new Entity).setPosition([3*width/4,3*height/4]).setShape(shapes.Circle).setType(9999).setMass(1000).setFriction(.05).setProperties([40]).setAim([0,0]).setHP(60);
 
 loop();

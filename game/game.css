@@ -3,3 +3,7 @@
     width: 100%;
     background: grey;
 }
+
+img {
+    display: none;
+}

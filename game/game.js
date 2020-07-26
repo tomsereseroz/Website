@@ -1,35 +1,30 @@
-console.log('game.js');
+import d2 from './2DUtils.js';
+
+console.log('game2.js');
 
 let numpads = 0;
 
-function gamepadHandler(event, connecting) {
+function gamepadConnect(event) {
   var gamepad = event.gamepad;
   console.log(gamepad);
-
-  if (connecting) {
-    console.log("Gamepad connected at index %d: %s. %d buttons, %d axes.",
-        event.gamepad.index, event.gamepad.id,
-        event.gamepad.buttons.length, event.gamepad.axes.length);      
-    numpads++;
-  } else {
-    numpads--;
-  }
+  console.log("Gamepad connected at index %d: %s. %d buttons, %d axes.",
+      event.gamepad.index, event.gamepad.id,
+      event.gamepad.buttons.length, event.gamepad.axes.length);      
+  numpads++;
 }
 
-window.addEventListener("gamepadconnected", function(e) { gamepadHandler(e, true); }, false);
-window.addEventListener("gamepaddisconnected", function(e) { gamepadHandler(e, false); }, false);
+window.addEventListener("gamepadconnected", function(e) { gamepadConnect(e); });
+window.addEventListener("gamepaddisconnected", function() { numpads-- });
 document.onkeydown = keyDownHandler;
 document.onkeyup = keyUpHandler;
 document.onmousemove = function(e){
 mouseX = e.clientX - canvasRect.x;
 mouseY = e.clientY - canvasRect.y;
-//console.log("altered: ", mouseX, mouseY);
 };
-document.onmousedown = function(e) { mousedown = 1; };
-document.onmouseup =   function(e) { mousedown = 0; };
+document.onmousedown = function() { mousedown = 1; };
+document.onmouseup =   function() { mousedown = 0; };
 
 function keyDownHandler(event){
-  //console.log(event.keyCode);
   if(event.keyCode >= 37 && event.keyCode <= 40){
     keysdown[event.keyCode-37] = 1;
   }else
@@ -82,52 +77,29 @@ function createPlayerGradient(player){
 }
 
 function aimAtMouse(){
-  let dist = distance(player.pos,[mouseX,mouseY]);
-  let factor = toRadius(dist);
+  let dist = d2.distance(player.pos,[mouseX,mouseY]);
+  let factor = d2.toRadius(dist);
   factor = Math.min(factor/500, 1);
-  dist = Unify(dist);
+  dist = d2.makeUnitVector(dist);
   player.aim = dist.map(x => x*factor);
 }
 
-function Unify([x,y]){
-  let h = Math.sqrt(x*x+y*y);
-  return [x/h, y/h];
-}
-
-function toRadius([dx, dy]){
-  return Math.sqrt(dx*dx + dy*dy);
-}
-
 function moveAtPlayer(obj1,obj2){
-  let look = Unify(distance(obj1.pos,obj2.pos));
+  let look = d2.makeUnitVector(d2.distance(obj1.pos,obj2.pos));
   obj1.vel[0] += look[0];
   obj1.vel[1] += look[1];
 }
 
-function distance(pos1,pos2){
-  let dx = pos2[0]-pos1[0];
-  let dy = pos2[1]-pos1[1];
-  return [dx, dy];
-}
-
-function clamp(min,max,value){//clamps value to not be lower than min or higher than max
-  return Math.max(min, Math.min(max,value));
-}
-
-function checkCCCollision(first,second){//checks a circle-circle collision
-  return toRadius(distance(first.pos,second.pos)) < (first.props[0] + second.props[0]);
-}
-
-function checkRRCollision(first,second){//checks a rectangle-rectangle collision
-  return(first.x<second.x+second.props[0] && first.x + first.props[0] > second.x && 
-        first.y<second.y+second.props[1] && first.y + first.props[1] > second.y);
-}
-
-function checkCRCollision(first,second){//checks a circle-rectangle collision (second is rectangle)
-  [dx, dy]  = distance(first.pos,[second.pos[0]+second.props[0]/2, second.pos[1]+second.props[1]/2]);//distance from center of circle to center of rectangle
-  dx = clamp(0,second.props[0]/2);
-  dy = clamp(0,second.props[1]/2);
-  return(toRadius(distance(first.pos,[second.pos[0]+second.props[0]+dx, second.pos[1]+second.props[1]+dy]))<this.props[0]);
+function moveApart(first, second){
+  let dist = d2.distance(first.pos,second.pos);
+  let distrad = d2.toRadius(dist);
+  let diff = (first.props[0] + second.props[0]) - distrad;
+  if(diff > 0){
+    let factor = diff/distrad;
+    dist = dist.map(x => x*factor);
+    second.pos[0] += dist[0];
+    second.pos[1] += dist[1];
+  }
 }
 
 const shapes = {
@@ -183,24 +155,24 @@ class physObj extends Object{
     this.vel[0] *= 1 - this.friction;
     this.vel[1] *= 1 - this.friction;
   }
-  checkCollision(other){//checks collision with another object. returns 1 if collided.
+  collidesWith(other){//checks collision with another object. returns 1 if collided.
     if(this.type == other.type) return 0;
     switch(this.shape){
       case shapes.Circle:
         switch(other.shape){
           case shapes.Circle:
-            return checkCCCollision(this,other);
+            return d2.isCCCollision(this,other);
           case shapes.Rectangle:
-            return checkCRCollision(this,other);
+            return d2.isCRCollision(this,other);
           default:
             console.log("checkcollision called on object without proper shape")
         }
       case shapes.Rectangle:
         switch(other.shape){
           case shapes.Circle:
-            return checkCRCollision(other,this);
+            return d2.isCRCollision(other,this);
           case shapes.Rectangle:
-            return checkRRCollision(this,other);
+            return d2.isRRCollision(this,other);
           default:
             console.log("checkcollision called on object without proper shape")
         }
@@ -209,7 +181,7 @@ class physObj extends Object{
   isOffScreen(){
     switch(this.shape){
       case shapes.Circle:
-        return this.pos[0] < 0 || this.pos[0] > width || this.pos[1] < 0 || this.pos[1] > height;
+        return this.pos[0]+this.props[0] < 0 || this.pos[0]-this.props[0] > width || this.pos[1]+this.props[0] < 0 || this.pos[1]-this.props[0] > height;
       case shapes.Rectangle:
         return this.pos[0]+this.props[0] < 0 || this.pos[0] > width || this.pos[1] + this.props[1] < 0 || this.pos[1] > height;
     }
@@ -226,6 +198,7 @@ class Projectile extends physObj{//projectiles handle collision with entities
     this.startTime = time;
     this.timeout = 1000;
   }
+  setDamage(damage){this.damage = damage; return this;}
   setTimeout(timeout){this.timeout = timeout; return this;}
   checkTimeout(){return this.startTime + this.timeout < time;} 
 }
@@ -235,9 +208,12 @@ class Entity extends physObj{//entities are for things that aim in a certaian di
     super();
     this.aim = [0,0];//aim [ax, ay]
     this.health = 10;
+    this.gun = 0;//delay in ms between shots
   }
   setAim(aim){this.aim = aim; return this;}
   setHP(health){this.health = health; return this;}
+  setGun(gun){this.gun = gun; return this;}
+  shootGun(vel){this.gun.Shoot(this.pos,vel); return this;}
   Tick(){
     this.Move();
     super.Tick();
@@ -270,8 +246,31 @@ class Entity extends physObj{//entities are for things that aim in a certaian di
   Move(){//sets velocity
     if(this.type == 9999){//player case
       
-    }else if(this.type == 0){//enemy case
+    }else if(this.type == 0 && d2.toRadius(d2.distance(this.pos,player.pos)) < 500 ){//enemy case
       moveAtPlayer(this,player);
+    }
+  }
+}
+
+class gun{
+  constructor(){
+    this.type = 0;
+    this.delay = 100;
+    this.lastShotTime = time;
+    this.damage = 10;
+    this.shotSpeed = 100;
+    this.shotSize = 10;
+    this.shotMass = 5;
+    this.shotFriction = 0;
+    this.timeout = 3000;
+  }
+  setType(type){this.type = type; return this;}
+  Shoot(pos, vel){
+    
+    if(time - this.lastShotTime > this.delay){
+      this.lastShotTime = time;
+      projArray.add(new Projectile).setType(this.type).setDamage(this.damage).setFriction(this.shotFriction).setMass(this.shotMass).setPosition(pos).setVelocity(vel).setTimeout(this.timeout).setShape(shapes.Circle).setProperties([this.shotSize]);
+      //projArray.Display();
     }
   }
 }
@@ -298,6 +297,12 @@ class objectArray{
     this.array.splice(index,1);
     return this;
   }
+  Display(){
+    console.log("displaying Array");
+    for(let i = 0; i<this.array.length; i++){
+      console.log(this.array[i]);
+    }
+  }
 }
 
 class projectileArray extends objectArray{
@@ -309,8 +314,12 @@ class projectileArray extends objectArray{
         deleted = true;
       }else{
         for(var j = 0; j < entArray.array.length; j++){
-          if(this.array[i].checkCollision(entArray.array[j])){
+          if(this.array[i].collidesWith(entArray.array[j])){
             entArray.array[j].damage(this.array[i]).conserveMomentum(this.array[i]);
+            if(entArray.array[j].checkHP()){
+              entArray.array.splice(j,1);
+              j--
+            }
             deleted = true;
             break;
           }
@@ -332,14 +341,15 @@ class projectileArray extends objectArray{
 class entityArray extends objectArray{
   Tick(){
     for (var i = 0; i < this.array.length; i++){
-      //console.log(this.array[i]);
-      if(this.array[i].checkHP()){
-        this.array.splice(i,1);
-        i--;
-      }else{
-        //console.log(this.array[i]); 
-        this.array[i].Tick();
+      for(var j = 0; j < this.array.length; j++){
+        if(i!=j){
+          if(this.array[i].collidesWith(this.array[j])){
+
+          }
+          moveApart(this.array[i],this.array[j]);
+        }
       }
+        this.array[i].Tick();
     }
   }
 }
@@ -361,8 +371,15 @@ function drawButton(button, index){
   
 }
 
+function createBGgradient(){
+  grd = context.createLinearGradient(0, 0, width, 0);
+  grd.addColorStop(0, "#afe569");
+  grd.addColorStop(.8, "#207cca");
+  grd.addColorStop(1, "#3b5b83");
+}
+
 function Shoot(obj){
-  projArray.add(new Projectile).setType(obj.type).setPosition([obj.pos[0]+obj.aim[0]*40,obj.pos[1]+obj.aim[1]*40]).setVelocity([obj.aim[0]*15,obj.aim[1]*15]).setTimeout(5000).setShape(shapes.Circle).setProperties([10]).setFriction(0);
+  projArray.add(new Projectile).setType(obj.type).setPosition([obj.pos[0]+obj.aim[0]*40,obj.pos[1]+obj.aim[1]*40]).setVelocity([obj.aim[0]*15,obj.aim[1]*15]).setTimeout(5000).setShape(shapes.Circle).setProperties([10]).setFriction(0).setMass(1);
 }
 
 function checkButton(button,index){
@@ -374,11 +391,16 @@ function checkButton(button,index){
   }
 }
 
-function limitDeadzone(axes,cutoff){
-  axes.forEach(number => {
-    if(Math.abs(number) < cutoff )
-      number = 0;
-  });
+function limitDeadzone(axis){
+  if(Math.abs(axis) < cutoff )
+    axis = 0;
+}
+
+function screenWrap(object){
+  if( object.pos[0] < 0 ){object.pos[0] += width;}
+  if( object.pos[1] < 0 ){object.pos[1] += height;}
+  if( object.pos[0] > width ){object.pos[0] -= width;}
+  if( object.pos[1] > height ){object.pos[1] -= height;}
 }
 
 function loop(){
@@ -386,7 +408,10 @@ function loop(){
   time = d.getTime();
   height = document.documentElement.clientHeight - 200;
   width = document.documentElement.clientWidth - 20;
-  
+  if(lastheight!= height || lastwidth != width)
+    createBGgradient();
+  lastheight = height;
+  lastwidth = width;
   context.canvas.height = height;
   context.canvas.width = width;
   context.fillStyle = grd;//"linear-gradient(to bottom right, #afe569 0%, #207cca 78%, #3b5b83 100%)";
@@ -397,32 +422,17 @@ function loop(){
     axes = gamepads[0].axes;
     buttons = gamepads[0].buttons;
     //buttons.forEach(drawButton);
-    if(Math.abs(axes[0]) > 0.04 ){player.vel[0] += axes[0];}//controller deadzone = +-0.04
-    if(Math.abs(axes[1]) > 0.04 ){player.vel[1] += axes[1];}
-    if(Math.abs(axes[2]) > 0.04 ){player.aim[0] = axes[2];}else{player.aim[0] = 0;}
-    if(Math.abs(axes[3]) > 0.04 ){player.aim[1] = axes[3];}else{player.aim[1] = 0;}
-    //player.Tick();//updates position from velocity and sets friction on velocity
-    if( player.pos[0] < 0 ){player.pos[0] += width;}
-    if( player.pos[1] < 0 ){player.pos[1] += height;}
-    if( player.pos[0] > width ){player.pos[0] -= width;}
-    if( player.pos[1] > height ){player.pos[1] -= height;}
-    //console.log(axes);
+    for(i = 0; i<4; i++)
+      if(Math.abs(axes[i]) < 0.04)
+        axes[i] = 0;//adds a deadzone to the controller
+    player.vel[0] += axes[0];
+    player.vel[1] += axes[1];
+    player.aim[0] = axes[2];
+    player.aim[1] = axes[3];
+
     buttons.forEach(checkButton);
-    projArray.Draw();
-    entArray.Draw();
-    projArray.Tick();
-    entArray.Tick();
-    if(entArray.array.length < 3){
-      entArray.add(new Entity).setType(0).setProperties([70]).setMass(1).setHP(100).setShape(shapes.Circle).setPosition([Math.random()*width,Math.random()*height]);
-    }
-  }else{
-    createPlayerGradient(player);
-    player.setStyle(playergrd);
-    entArray.Draw();
-    projArray.Draw();
-    projArray.Tick();   
-    entArray.Tick();
-    
+
+  }else{//mouse and keyboard
     //move
     if(keysdown != [0,0,0,0]){
       player.vel[0] += keysdown[2] - keysdown[0];
@@ -430,13 +440,25 @@ function loop(){
     }
     //aim
     aimAtMouse();
-    if(mousedown)
-      Shoot(player);
-    //console.log("running");
-    if(entArray.array.length < 3){
-      entArray.add(new Entity).setType(0).setProperties([70]).setMass(1).setHP(100).setShape(shapes.Circle).setPosition([Math.random()*width,Math.random()*height]);
+    if(mousedown){
+      //Shoot(player);
+      player.shootGun(player.aim.map(x => x*15));
     }
-}
+  }
+  entArray.Draw();
+  projArray.Draw();
+  projArray.Tick();   
+  entArray.Tick();
+  screenWrap(player);
+  if(entArray.array.length < 15){
+    let enemy = entArray.add(new Entity).setType(0).setProperties([70]).setMass(30).setHP(100).setShape(shapes.Circle).setPosition([Math.random()*width,Math.random()*height]);
+    while(d2.toRadius(d2.distance(player.pos, enemy.pos))<300){
+      enemy.setPosition([Math.random()*width,Math.random()*height]);
+    };
+  }
+  context.drawImage(heartImg, 10, 10);
+  context.drawImage(heartImg, 55, 10);
+  context.drawImage(emptyheartImg, 100, 10);
   window.requestAnimationFrame(loop);
 }
 
@@ -444,19 +466,18 @@ function loop(){
 
 let context = document.getElementById("gb").getContext("2d");
 let height = document.documentElement.clientHeight - 200;
+let lastheight = height;
 let width = document.documentElement.clientWidth - 20;
+let lastwidth = width;
 let grd = context.createLinearGradient(0, 0, width, 0);
-  grd.addColorStop(0, "#afe569");
-  grd.addColorStop(.8, "#207cca");
-  grd.addColorStop(1, "#3b5b83");
+createBGgradient();
 let playergrd = context.createRadialGradient(width/2, height/2,5,width/2, height/2,40);
 let canvasRect = document.getElementById("gb").getBoundingClientRect();
 let mouseX = 0;
 let mouseY = 0;
-
+let cutoff = 0.04;
 let keysdown = [0,0,0,0];
 let mousedown = 0;
-
 let d = new Date;
 let time = d.getTime();
 let axes = [];
@@ -464,5 +485,10 @@ let buttons = {};
 let projArray = new projectileArray;
 let entArray = new entityArray;
 let player = entArray.add(new Entity).setPosition([3*width/4,3*height/4]).setShape(shapes.Circle).setType(9999).setMass(1000).setFriction(.05).setProperties([40]).setAim([0,0]).setHP(60);
+let heartImg = document.getElementById("heart");
+let emptyheartImg = document.getElementById("emptyheart");
+let playergun = new gun;
+playergun.setType(9999);
+player.setGun(playergun);
 
 loop();

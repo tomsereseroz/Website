@@ -1,6 +1,7 @@
 import d2 from './2DUtils.js';
+import utils from './gameUtils.js';
 
-console.log('game2.js');
+console.log('game.js');
 
 let numpads = 0;
 
@@ -68,40 +69,6 @@ function keyUpHandler(event){
     }
 }
 
-function createPlayerGradient(player){
-  playergrd = context.createRadialGradient(player.pos[0], player.pos[1], 5, player.pos[0], player.pos[1],40);
-  playergrd.addColorStop(0, "purple");
-  playergrd.addColorStop(.4+.3*Math.sin(2*time*Math.PI/2000), "black");
-  playergrd.addColorStop(.8+.1*Math.sin(2*time*Math.PI/3000), "red");
-  playergrd.addColorStop(.95+.05*Math.sin(2*time*Math.PI/600), "pink");
-}
-
-function aimAtMouse(){
-  let dist = d2.distance(player.pos,[mouseX,mouseY]);
-  let factor = d2.toRadius(dist);
-  factor = Math.min(factor/500, 1);
-  dist = d2.makeUnitVector(dist);
-  player.aim = dist.map(x => x*factor);
-}
-
-function moveAtPlayer(obj1,obj2){
-  let look = d2.makeUnitVector(d2.distance(obj1.pos,obj2.pos));
-  obj1.vel[0] += look[0];
-  obj1.vel[1] += look[1];
-}
-
-function moveApart(first, second){
-  let dist = d2.distance(first.pos,second.pos);
-  let distrad = d2.toRadius(dist);
-  let diff = (first.props[0] + second.props[0]) - distrad;
-  if(diff > 0){
-    let factor = diff/distrad;
-    dist = dist.map(x => x*factor);
-    second.pos[0] += dist[0];
-    second.pos[1] += dist[1];
-  }
-}
-
 const shapes = {
   Undefined: 0,
   Circle: 1,
@@ -156,7 +123,6 @@ class physObj extends Object{
     this.vel[1] *= 1 - this.friction;
   }
   collidesWith(other){//checks collision with another object. returns 1 if collided.
-    if(this.type == other.type) return 0;
     switch(this.shape){
       case shapes.Circle:
         switch(other.shape){
@@ -228,17 +194,11 @@ class Entity extends physObj{//entities are for things that aim in a certaian di
   checkHP(){return this.health < 1;}
   Draw(){
     if(this.type == 9999){//player case, draw extra marker for aim 
-      createPlayerGradient(this);
-      this.setStyle(playergrd);
+      this.setStyle(utils.createPlayerGradient(this,context,time));
       super.Draw();
-      context.beginPath();
-      context.strokeStyle = "pink";
-      context.moveTo(this.pos[0],this.pos[1]);
-      context.lineWidth = 10;
-      context.lineTo(this.pos[0]+this.aim[0]*40,this.pos[1]+this.aim[1]*40);
-      context.stroke();
+      utils.drawAimIndicator(this,context);
     }else if(this.type == 0){
-      this.setStyle(getHPStyle(this));
+      this.setStyle(utils.getHPStyle(this,context));
       super.Draw();
     }else
     super.Draw();
@@ -247,7 +207,7 @@ class Entity extends physObj{//entities are for things that aim in a certaian di
     if(this.type == 9999){//player case
       
     }else if(this.type == 0 && d2.toRadius(d2.distance(this.pos,player.pos)) < 500 ){//enemy case
-      moveAtPlayer(this,player);
+      utils.aMoveAtB(this,player);
     }
   }
 }
@@ -266,7 +226,6 @@ class gun{
   }
   setType(type){this.type = type; return this;}
   Shoot(pos, vel){
-    
     if(time - this.lastShotTime > this.delay){
       this.lastShotTime = time;
       projArray.add(new Projectile).setType(this.type).setDamage(this.damage).setFriction(this.shotFriction).setMass(this.shotMass).setPosition(pos).setVelocity(vel).setTimeout(this.timeout).setShape(shapes.Circle).setProperties([this.shotSize]);
@@ -314,7 +273,7 @@ class projectileArray extends objectArray{
         deleted = true;
       }else{
         for(var j = 0; j < entArray.array.length; j++){
-          if(this.array[i].collidesWith(entArray.array[j])){
+          if(this.array[i].collidesWith(entArray.array[j])&&this.array[i].type!=entArray.array[j].type){
             entArray.array[j].damage(this.array[i]).conserveMomentum(this.array[i]);
             if(entArray.array[j].checkHP()){
               entArray.array.splice(j,1);
@@ -341,25 +300,17 @@ class projectileArray extends objectArray{
 class entityArray extends objectArray{
   Tick(){
     for (var i = 0; i < this.array.length; i++){
-      for(var j = 0; j < this.array.length; j++){
-        if(i!=j){
-          if(this.array[i].collidesWith(this.array[j])){
-
+      for(var j = i+1; j < this.array.length; j++){
+        if(this.array[i].collidesWith(this.array[j])){
+          //console.log(this.array[i].type,this.array[j].type);
+          if(this.array[i].type == this.array[j].type){
+            utils.moveApart(this.array[i],this.array[j]);
           }
-          moveApart(this.array[i],this.array[j]);
         }
       }
-        this.array[i].Tick();
+      this.array[i].Tick();
     }
   }
-}
-
-function getHPStyle(object){
-  let egrd = context.createRadialGradient(object.pos[0], object.pos[1], 2,object.pos[0],object.pos[1],object.props[0]);
-  egrd.addColorStop(0, "white");
-  egrd.addColorStop(object.health/101, "red");
-  egrd.addColorStop(1, "black");
-  return egrd;
 }
 
 function drawButton(button, index){
@@ -371,36 +322,13 @@ function drawButton(button, index){
   
 }
 
-function createBGgradient(){
-  grd = context.createLinearGradient(0, 0, width, 0);
-  grd.addColorStop(0, "#afe569");
-  grd.addColorStop(.8, "#207cca");
-  grd.addColorStop(1, "#3b5b83");
-}
-
-function Shoot(obj){
-  projArray.add(new Projectile).setType(obj.type).setPosition([obj.pos[0]+obj.aim[0]*40,obj.pos[1]+obj.aim[1]*40]).setVelocity([obj.aim[0]*15,obj.aim[1]*15]).setTimeout(5000).setShape(shapes.Circle).setProperties([10]).setFriction(0).setMass(1);
-}
-
 function checkButton(button,index){
   if(button.value){
     switch(index){
-      case 7: Shoot(player);//7 = trigger
+      case 7: player.shootGun(player.aim.map(x => x*15));//7 = trigger
       default:
     }
   }
-}
-
-function limitDeadzone(axis){
-  if(Math.abs(axis) < cutoff )
-    axis = 0;
-}
-
-function screenWrap(object){
-  if( object.pos[0] < 0 ){object.pos[0] += width;}
-  if( object.pos[1] < 0 ){object.pos[1] += height;}
-  if( object.pos[0] > width ){object.pos[0] -= width;}
-  if( object.pos[1] > height ){object.pos[1] -= height;}
 }
 
 function loop(){
@@ -409,7 +337,7 @@ function loop(){
   height = document.documentElement.clientHeight - 200;
   width = document.documentElement.clientWidth - 20;
   if(lastheight!= height || lastwidth != width)
-    createBGgradient();
+    grd = utils.createBGgradient(context,width);
   lastheight = height;
   lastwidth = width;
   context.canvas.height = height;
@@ -419,10 +347,10 @@ function loop(){
   
   if(numpads){//gamepad control section
     const gamepads = navigator.getGamepads();
-    axes = gamepads[0].axes;
-    buttons = gamepads[0].buttons;
+    axes = gamepads[0].axes.slice();
+    buttons = gamepads[0].buttons.slice();
     //buttons.forEach(drawButton);
-    for(i = 0; i<4; i++)
+    for(let i = 0; i<4; i++)
       if(Math.abs(axes[i]) < 0.04)
         axes[i] = 0;//adds a deadzone to the controller
     player.vel[0] += axes[0];
@@ -439,9 +367,8 @@ function loop(){
       player.vel[1] += keysdown[3] - keysdown[1];
     }
     //aim
-    aimAtMouse();
+    utils.aimAtCoords(player,[mouseX, mouseY]);
     if(mousedown){
-      //Shoot(player);
       player.shootGun(player.aim.map(x => x*15));
     }
   }
@@ -449,7 +376,7 @@ function loop(){
   projArray.Draw();
   projArray.Tick();   
   entArray.Tick();
-  screenWrap(player);
+  utils.screenWrap(player,width,height);
   if(entArray.array.length < 15){
     let enemy = entArray.add(new Entity).setType(0).setProperties([70]).setMass(30).setHP(100).setShape(shapes.Circle).setPosition([Math.random()*width,Math.random()*height]);
     while(d2.toRadius(d2.distance(player.pos, enemy.pos))<300){
@@ -469,9 +396,7 @@ let height = document.documentElement.clientHeight - 200;
 let lastheight = height;
 let width = document.documentElement.clientWidth - 20;
 let lastwidth = width;
-let grd = context.createLinearGradient(0, 0, width, 0);
-createBGgradient();
-let playergrd = context.createRadialGradient(width/2, height/2,5,width/2, height/2,40);
+let grd = utils.createBGgradient(context,width);
 let canvasRect = document.getElementById("gb").getBoundingClientRect();
 let mouseX = 0;
 let mouseY = 0;
@@ -485,6 +410,7 @@ let buttons = {};
 let projArray = new projectileArray;
 let entArray = new entityArray;
 let player = entArray.add(new Entity).setPosition([3*width/4,3*height/4]).setShape(shapes.Circle).setType(9999).setMass(1000).setFriction(.05).setProperties([40]).setAim([0,0]).setHP(60);
+let playergrd = utils.createPlayerGradient(player,context,time);
 let heartImg = document.getElementById("heart");
 let emptyheartImg = document.getElementById("emptyheart");
 let playergun = new gun;
